@@ -1,3 +1,5 @@
+This is a test repo to set up my own version of the GB Next App
+
 API Workflow:
 
 # GB Actions Panel for Copilot
