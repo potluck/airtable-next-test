@@ -2,82 +2,40 @@ import { gbBase, gbTable } from './constants'
 
 // init Airtable and base
 const Airtable = require('airtable');
-const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(gbBase.naBaseId);
+const base = new Airtable({ 
+    apiKey: 'keyJPd4UcThcv0lq0' //process.env.AIRTABLE_API_KEY 
+}).base(gbBase.naBaseId);
 
 // init tables
-const studentsTable = base(gbTable.students.tableName)
-const locsTable = base(gbTable.locations.na.name)
+const colorsTable = base('Prefs');
 
 /* 
-    LOCATIONS API
+    COLORS API
 */
 
-const getLocation = async function (clientName) {
-    let locsArr = []
 
-    const records = await locsTable.select({
-        // Selecting the record with matching full name
+const getColors = async function () {
+    const records = await colorsTable.select({
         maxRecords: 150,
         view: "Grid view",
-        filterByFormula: `{School Owner} = "${clientName}"`
-    }).firstPage()
+    }).firstPage();
+    // console.log(records);
 
-
-    // console.log(records)
-    records.forEach((record) => {
-        // console.log(record.fields['School Name'])
-        locsArr.push({
-            schoolName: record.fields['School Name'],
-            recordId: record.id
-        })
-    })
-    // console.log(locsArr)
-    return locsArr
-}
-
-
+    let colorsArr = [];
+    records.forEach((color) => {
+        console.log(color);
+        colorsArr.push({
+            recordId: color.id,
+            color: color.fields['Color'],
+            likeIt: color.fields['Do you like it?'] || false
+        });
+    });
+    console.log(colorsArr);
+    return colorsArr;
+};
 
 
 
-/* 
-    STUDENTS API
-*/
-
-// get all students and map fields
-const getStudents = async function (clientName) {
-    let studentsArr = []
-
-    const records = await studentsTable.select({
-        // Selecting the record with matching full name
-        // maxRecords: 150,
-        view: "Grid view",
-        filterByFormula: `{School Owner (from Gracie Barra Location)} = "${clientName}"`
-    }).eachPage(function page(records, fetchNextPage){
-
-        records.forEach((record) => {
-            let currentRank = ''
-            let isVerified = ''
-            let currentStatus = ''
-            if (record.fields['Belt Rank']) { currentRank = record.fields['Belt Rank'] } else {currentRank = 'N/A'}
-            if (record.fields['Belt Rank Verified']) { isVerified = record.fields['Belt Rank Verified'] } else {isVerified = 'N/A'}
-            if (record.fields.Status) { currentStatus = record.fields.Status } else {currentStatus = 'N/A'}
-            studentsArr.push({
-                name: record.fields.Student,
-                recordId: record.id,
-                rank: currentRank,
-                isVerified: isVerified,
-                status: currentStatus,
-                school: record.fields['Gracie Barra Location'][0]
-            })
-        })
-
-        fetchNextPage()
-
-    })
-    // console.log(records)
-    // console.log(studentsArr)
-    return studentsArr
-}
 
 
 // PATCH Belt Rank Verification to Airtable 
@@ -94,15 +52,15 @@ const updateBeltRank = async function (id, verified) {
 }
 
 // PATCH Status (Active/Suspended) to Airtable 
-const updateStatus = async function (id, status) {
+const updateLikedStatus = async function (id, liked) {
     let statusUpdate = ''
-    await studentsTable.update([
+    await colorsTable.update([
         {
             "id": id,
             "fields": {
-                Status: status,
+                'Do you like it?': liked,
             }
-        }]).then(res => statusUpdate = res[0].fields.Status) // returns response containing only new active/sus status text for display
+        }]).then(res => statusUpdate = res[0].fields['Do you like it?'] || false) // returns response containing only new active/sus status text for display
         return statusUpdate
 }
 
@@ -110,4 +68,4 @@ const updateStatus = async function (id, status) {
 
 
 // exports
-export { getStudents, updateBeltRank, updateStatus, getLocation}
+export { updateLikedStatus, getColors}

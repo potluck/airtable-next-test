@@ -3,7 +3,7 @@ import Container from '../Components/container'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 
-import { getStudents, updateBeltRank, updateStatus, getLocation } from '../utils/airtable'
+import { updateLikedStatus, getColors } from '../utils/airtable'
 
 
 /* 
@@ -18,7 +18,7 @@ let clientId;
 const portalGetReq = {
     method: 'GET',
     headers: {
-        "X-API-KEY": process.env.PORTAL_API_KEY,
+        "X-API-KEY": 'keyJPd4UcThcv0lq0', //process.env.PORTAL_API_KEY,
         "Content-Type": "application/json"
     }
 }
@@ -37,80 +37,47 @@ function HomePage(props) {
 
     // RESET STATES FUNCTION
     const reset = () => {
-        setRank('')
-        setStatus('')
-        setIsVerified('')
+        setLiked('');
+        setSelected('');
     }
 
 
-    const [selected, setSelected] = useState('') // SELECTED STUDENT STATE
-    console.log('Selected: ' + selected)
+    const [selected, setSelected] = useState('') // SELECTED COLOR STATE
 
-    const [rank, setRank] = useState('') // SELECTED STUDENT RANK STATE
-    console.log('Rank: ' + rank)
-
-    const [isVerified, setIsVerified] = useState('') // SELECTED STUDENT VERIFIED STATE
-
-    const [status, setStatus] = useState('') // SELECTED STUDENT STATUS (ACTIVE/SUSPENDED) STATE
-
-    const [location, setLocation] = useState('') // SELECTED LOCATION STATE
-    console.log('Location: ' + location)
-
+    const [liked, setLiked] = useState('');
 
     useEffect(() => {
-        // CHECK IF STUDENT IS SELECTED AND SET STATE
-        if (selected !== '' && selected !== 'select student') {
-            let studentRecord = props.allStudents.filter(student => student.recordId === selected)
-            // console.log(studentRecord[0])
-            setRank(studentRecord[0].rank)
-            setIsVerified(studentRecord[0].isVerified)
-            setStatus(studentRecord[0].status)
-        } else if (selected === 'select student' || '') {
+        // CHECK IF COLOR IS SELECTED AND SET STATE
+        console.log('hi pots 2');
+        if (selected !== '' && selected !== 'select color') {
+            let colorRecord = props.allColors.filter(color => color.recordId === selected);
+
+            console.log('hi pots 3');
+            setLiked(colorRecord[0].likeIt);
+        } else if (selected === 'select color' || '') {
             reset()
         }
     }, [selected]);
 
 
 
-
-
-    // UPDATE RANK AND REFRESH DATA
-    const handleUpdateRank = async function (id, verified) {
-        updateBeltRank(id, verified).then(res => setIsVerified(res))
-        refreshData()
-    }
-
     // UPDATE STATUS AND REFRESH DATA
-    const handleUpdateStatus = async function (id, status) {
-        updateStatus(id, status).then(res => setStatus(res))
+    const handleUpdateLikedStatus = async function (id, liked) {
+        updateLikedStatus(id, liked).then(res => setLiked(res))
         refreshData()
     }
 
     // CONDITIONALLY DISPLAY ACTIVATE/SUSPEND BUTTON
-    const displayStatus = () => {
-        if (status === 'Active') {
-            return <button value="Suspended" onClick={e => handleUpdateStatus(selected, e.target.value)}>Suspend</button>
-        } else if (status === 'Suspended') {
-            return <button value="Active" onClick={e => handleUpdateStatus(selected, e.target.value)}>Activate</button>
-        } else { return null }
+    const displayLikedStatus = () => {
+        if (liked) {
+            return <button value="Unlike" onClick={e => handleUpdateLikedStatus(selected, false)}>Unlike</button>
+        } else  {
+            return <button value="Like" onClick={e => handleUpdateLikedStatus(selected, true)}>Like</button>
+        }
     }
 
-    // CONDITIONALLY DISPLAY STUDENT LIST BASED ON LOCATION
-    const getStudentsByLocation = () => {
-        let studentsByLocation = props.allStudents.filter(student => student.school === location)
-        return <div className='custom-select'>
-            <select className="select-selected" onChange={e => { setSelected(e.target.value) }}>
-                <option value="select student">Select Student</option>
-                {studentsByLocation.map((student) =>
-                    <option key={student.recordId} value={student.recordId}>{student.name}</option>)}
-            </select>
-        </div>
-    }
-
-    // HANDLE LOCATION CHANGE AND CLEAR STUDENT DATA
-    const handleLocChange = (newLocation) => {
-        setLocation(newLocation)
-        reset()
+    const handleColorChange = (newColor) => {
+        setSelected(newColor);
     }
 
 
@@ -118,37 +85,27 @@ function HomePage(props) {
         <>
             <Container>
                 <Head>
-                    <title>GB Actions Panel</title>
+                    <title>Color Actions</title>
                 </Head>
-                <div className='header'><h1>{props.clientName}</h1></div>
+                <div className='header'><h1>Color Actions</h1></div>
                 <div className='flex-container'>
-                    <div className='row'>Select Location:
-                        <div className='custom-select'>
-                            <select className="select-selected" onChange={e => { handleLocChange(e.target.value) }}>
-                                <option value="select location">Select Location</option>
-                                {props.allLocations.map((location) =>
-                                    <option key={location.recordId} value={location.recordId}>{location.schoolName}</option>)}
-                            </select>
-                        </div>
+                    <div className='custom-select'>
+                        <select className="select-selected" onChange={e => { handleColorChange(e.target.value) }}>
+                            <option value="select color">Select Color!</option>
+                            {props.allColors.map((color) =>
+                                    <option key={color.recordId} value={color.recordId}>{color.color}</option>)}
+                        </select>
                     </div>
-                    <div className='row'>Select Student:
-                        {getStudentsByLocation()}
-                    </div>
-                    <div className='row'>Current rank: <span className='input'>{rank}</span></div>
-                    <div className='row'>Verified: <span className='input'>{isVerified}</span></div>
-                    {isVerified === 'No' ?
+                    {selected !== '' ? 
+                    <div>
+                        <div className='row'>Do you like it? Currently: <span className='input'>{liked? "Yes": "No"}</span></div>
                         <div className='row'>
                             <div className='btn'>
-                                <button onClick={e => handleUpdateRank(selected, "Yes")}>Verify</button>
+                                {displayLikedStatus()}
                             </div>
+                        </div> 
                         </div>
-                        : null}
-                    <div className='row'>Status: <span className='input'>{status}</span></div>
-                    <div className='row'>
-                        <div className='btn'>
-                            {displayStatus()}
-                        </div>
-                    </div>
+                    : null}
                 </div>
             </Container>
         </>
@@ -168,6 +125,8 @@ export default HomePage
 */
 
 export async function getServerSideProps(context) {
+
+    console.log("hi pots 1");
 
     // -------------PORTAL API-------------------
 
@@ -190,22 +149,13 @@ export async function getServerSideProps(context) {
 
     // -------------AIRTABLE API -------------------
 
-
-    const allStudents = await getStudents(fullName) // Calls Airtable API to get all students matched on client name
-    const allLocations = await getLocation(fullName)
-    const sortStudents = allStudents.sort(function (a, b) {
-        let textA = a.name.toUpperCase()
-        let textB = b.name.toUpperCase()
-        return (textA < textB) ? -1 : (textA > textB) ? 1 : 0;
-    })
+    const allColors = await getColors();
 
 
     // -----------PROPS-----------------------------
     return {
         props: {
-            clientName: fullName,
-            allStudents: sortStudents,
-            allLocations
+            allColors
         }
     }
 }

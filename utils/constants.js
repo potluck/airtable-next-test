@@ -4,7 +4,7 @@
 
 // REGIONAL BASE IDs
 export const gbBase = {
-    naBaseId: 'appVOKLbql3ITyvNZ',
+    naBaseId: 'appbpdKJXGtljWY7i', //'appVOKLbql3ITyvNZ',
     bzBaseId: '',
     euBaseId: '',
     wBaseId: '',
@@ -18,7 +18,8 @@ export const gbBase = {
 export const gbTable = {
     locations: {
         na: {
-            name: 'GB NA Locations',
+            // name: 'GB NA Locations',
+            name: 'Prefs',
             id: ''
         },
         brazil: {},
