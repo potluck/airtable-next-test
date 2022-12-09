@@ -33,6 +33,7 @@ const portalGetReq = {
 
 function HomePage(props) {
     const router = useRouter()
+    console.log(router);
     const refreshData = () => { router.replace(router.asPath) }
 
     // RESET STATES FUNCTION
@@ -150,7 +151,6 @@ export async function getServerSideProps(context) {
     // -------------AIRTABLE API -------------------
 
     const allColors = await getColors();
-
 
     // -----------PROPS-----------------------------
     return {
